@@ -1,42 +1,74 @@
 Beaglebone Black Hardware Counter Capture Driver
 ================================================
 
-Building the kernel
--------------------
+Changes to ddrown version
+-------------------------
 
- * put kernel source from https://github.com/beagleboard/linux/ in the directory linux
- * The official beaglebone 3.8.x kernel (branch "3.8") needs commit 8fc7fcb593ac3c5730c8391c2d7db5b87e2d0bf2
- * You can backport it with the command: git cherry-pick 8fc7fcb593ac3c5730
- * To build on an Intel Linux machine, you'll need to install a cross compiler
-   * (Fedora) sudo yum install gcc-arm-linux-gnu
- * uncompress /proc/config.gz from beaglebone and put it in linux/.config
- * modify .config: CONFIG\_CROSS\_COMPILE="arm-linux-gnu-"
-
-> make ARCH=arm oldconfig
-> make ARCH=arm zImage
-> make ARCH=arm modules
-
-Building the module
--------------------
-
-The makefile assumes the kernel sources are in ../linux.  If this is incorrect, change the KDIR variable
-
-to build the module, type: make
+I adapted the pps-gmtimer from Dan Drown. He used functions that are not longer exported by linux-kernel-driver (dm-timer) (more info: https://patchwork.kernel.org/patch/10106287/). The adapted Module access the necessary functions through the omap_dm_timer_ops struct (dmtimer-omap.h). 
+So the driver can compiled without changing the linux kernel (4.14.108).
+I did NOT tested the tclkin feature. 
 
 
-Installing the Device Tree Overlay
-----------------------------------
+Building the module on BBB
+--------------------------
 
-on the BBB:
+  * sudo apt-get update && sudo apt-get upgrade
+  * sudo apt-get install linux-headers-$(uname -r)
+  * git clone THIS_REPO TODO
+  * make
 
- * install zImage and modules
+The Output after make should be something like this:
+
+```
+make -C /lib/modules/4.14.108-ti-r104/build M=$PWD ARCH=arm
+make[1]: Entering directory '/usr/src/linux-headers-4.14.108-ti-r104'
+  AR      /home/ubuntu/pps-gmtimer/built-in.o
+  CC [M]  /home/ubuntu/pps-gmtimer/pps-gmtimer.o
+  Building modules, stage 2.
+  MODPOST 1 modules
+  CC      /home/ubuntu/pps-gmtimer/pps-gmtimer.mod.o
+  LD [M]  /home/ubuntu/pps-gmtimer/pps-gmtimer.ko
+make[1]: Leaving directory '/usr/src/linux-headers-4.14.108-ti-r104'
+```
+
+
+Installing the Device Tree Overlay on BBB
+-----------------------------------------
+
+The device-tree-overlay-file (DD-GPS-00A0.dtbo) defines to use UART2 (Pins: P9.21, P9.22) as UART for your GPS-Board and to use Timer4 (P8.7) as PPS-Device Pin
+
  * make DD-GPS-00A0.dtbo
  * cp DD-GPS-00A0.dtbo /lib/firmware/
- * add DD-GPS to your list of capes in /etc/default/capemgr
-
-
-Using an external oscillator (TCLKIN)
+ * add the following lines to /boot/uEnv.txt:
+ * * under line ```###Custom Cape```
+ * * dtb_overlay=/lib/firmware/DD-GPS-00A0.dtbo
+ * * under line ```###Cape Universal Enable```
+ * * enable_uboot_cape_universal=1
+ * * cape_enable=bone_capemgr.enable_partno=DD-GPS
+ * * under line ```###Disable auto loading of virtual capes (emmc/video/wireless/adc)```
+ * * disable_uboot_overlay_video=1
+ * * disable_uboot_overlay_audio=1
+ * sudo reboot
+ 
+ load pps-gmtimer kernel modul on BBB
 -------------------------------------
+
+  * go to build directory
+  * sudo insmod pps-gmtimer.ko
+  * check log messages with dmesg
+
+In Case of Success the Output for dmesg should be something like this:
+
+```
+[  175.901727] pps_gmtimer: loading out-of-tree module taints kernel.
+[  175.908995] pps-gmtimer: timer name=timer4 rate=24000000Hz
+[  175.909064] pps-gmtimer: using system clock
+[  175.913184] pps pps0: new PPS source timer4
+[  175.913217] clocksource: timer4: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 79635851949 ns
+```
+
+Using an external oscillator (TCLKIN) - NOT TESTED
+--------------------------------------------------
 
 To use an external clock source on pin P9.41 (TCLKIN).  It accepts up to a 24MHz clock.
 
@@ -58,6 +90,8 @@ To switch back to the default time source:
 
 Monitoring operation
 --------------------
+
+  * cat /sys/class/pps/pps0/assert
 
 The sysfs files in /sys/devices/ocp.3/pps\_gmtimer.\* contain the counter's current state:
 

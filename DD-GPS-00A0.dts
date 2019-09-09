@@ -2,7 +2,7 @@
  * Copyright (C) 2013 the8thlayerof.net
  *
  * GPS cape
- * UART4 on pins P9.11, P9.13
+ * UART2 on pins P9.21, P9.22
  * PPS on pin P8.7
  *
  * This program is free software; you can redistribute it and/or modify
@@ -13,7 +13,7 @@
 /plugin/;
 
 / {
-   	compatible = "ti,beaglebone", "ti,beaglebone-black";
+   compatible = "ti,beaglebone", "ti,beaglebone-black";
 
         /* identification */
         part-number = "DD-GPS";
@@ -22,22 +22,22 @@
         /* state the resources this cape uses */
         exclusive-use =
                 /* the pin header uses */
-                "P9.11",        /* uart4_rxd/GPS TX */
-                "P9.13",        /* uart4_txd/GPS RX */
+                "P9.22",        /* uart2_rxd/GPS TX */
+                "P9.21",        /* uart4_txd/GPS RX */
                 "P8.7",         /* timer4/GPS PPS   */
                 /* the hardware ip uses */
-                "uart4",   /* 0-based counting */
+                "uart2",   /* 0-based counting */
                 "gpio2_2", /* 0-based counting */
 		"timer4";  /* 1-based counting */
 
         fragment@0 {
                 target = <&am33xx_pinmux>;
                 __overlay__ {
-                        gps_uart4_pins: pinmux_gps_uart4_pins {
+                        gps_uart2_pins: pinmux_gps_uart2_pins {
                                 pinctrl-single,pins = <
-					0x70 0x26 /* P9.11 uart4_rxd MODE6 INPUT (RX) */
-                                        0x74 0x06 /* P9.13 uart4_txd MODE6 OUTPUT (TX) */
-                                >;
+					0x150 0x21	/* spi0_sclk.uart2_rxd | MODE1 */
+					0x154 0x01	/* spi0_d0.uart2_txd | MODE1 */
+                               >;
                         };
                         
                         gps_pps_pins: pinmux_gps_pps_pins {
@@ -50,11 +50,11 @@
         };
 
 	fragment@1 {
-                target = <&uart5>;	/* 1-based counting */
+                target = <&uart2>;	/* 1-based counting */
                 __overlay__ {
                         status = "okay";
                         pinctrl-names = "default";
-                        pinctrl-0 = <&gps_uart4_pins>;
+                        pinctrl-0 = <&gps_uart2_pins>;
                 };
 	};
 
@@ -62,6 +62,7 @@
 		target = <&ocp>;
 				
                 __overlay__ {
+			P8_07_pinmux { status = "disabled"; };
 			pps_gmtimer {
 				compatible = "pps-gmtimer";
 				status = "okay";
