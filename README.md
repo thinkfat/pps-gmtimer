@@ -41,14 +41,14 @@ The device-tree-overlay-file (DD-GPS-00A0.dtbo) defines to use UART2 (Pins: P9.2
  * make DD-GPS-00A0.dtbo
  * cp DD-GPS-00A0.dtbo /lib/firmware/
  * add the following lines to /boot/uEnv.txt:
-  * under line ```###Custom Cape```
-  * dtb_overlay=/lib/firmware/DD-GPS-00A0.dtbo
-  * under line ```###Cape Universal Enable```
-  * enable_uboot_cape_universal=1
-  * cape_enable=bone_capemgr.enable_partno=DD-GPS
-  * under line ```###Disable auto loading of virtual capes (emmc/video/wireless/adc)```
-  * disable_uboot_overlay_video=1
-  * disable_uboot_overlay_audio=1
+ * * under line ```###Custom Cape```
+ * * dtb_overlay=/lib/firmware/DD-GPS-00A0.dtbo
+ * * under line ```###Cape Universal Enable```
+ * * enable_uboot_cape_universal=1
+ * * cape_enable=bone_capemgr.enable_partno=DD-GPS
+ * * under line ```###Disable auto loading of virtual capes (emmc/video/wireless/adc)```
+ * * disable_uboot_overlay_video=1
+ * * disable_uboot_overlay_audio=1
  * sudo reboot
  
  load pps-gmtimer kernel modul on BBB
