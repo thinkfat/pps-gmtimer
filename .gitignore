@@ -2,6 +2,7 @@
 *.o
 .*.cmd
 .tmp_versions/
+.vscode/
 Module.symvers
 modules.order
 *.ko
