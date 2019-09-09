@@ -15,6 +15,7 @@ Building the module on BBB
   * sudo apt-get update && sudo apt-get upgrade
   * sudo apt-get install linux-headers-$(uname -r)
   * git clone https://github.com/kugelbit/pps-gmtimer
+  * cd pps-gmtimer
   * make
 
 The Output after make should be something like this:
