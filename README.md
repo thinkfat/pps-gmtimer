@@ -55,8 +55,8 @@ The device-tree-overlay-file (DD-GPS-00A0.dtbo) defines to use UART2 (Pins: P9.2
 -------------------------------------
 
   * go to build directory
-  * sudo insmod pps-gmtimer.ko
-  * check log messages with dmesg
+  * ```sudo insmod pps-gmtimer.ko```
+  * check log messages with ```dmesg```
 
 In Case of Success the Output for dmesg should be something like this:
 
