@@ -161,11 +161,14 @@ static irqreturn_t pps_gmtimer_interrupt(int irq, void *data)
         irq_status = pdata->timer_ops->read_status(pdata->capture_timer);
         if (irq_status & OMAP_TIMER_INT_CAPTURE)
         {
+	    struct system_time_snapshot snap;
             uint32_t ps_per_hz;
-            unsigned int count_at_capture;
+            uint32_t count_at_capture;
 
-            pps_get_ts(&pdata->ts);
-            pdata->count_at_interrupt = pdata->timer_ops->read_counter(pdata->capture_timer);
+	    /* use ktime_get_snapshot() as it delivers a synchronized raw cycle count from the clocksource */
+	    ktime_get_snapshot(&snap);
+	    pdata->ts.ts_real = ktime_to_timespec64(snap.real);
+	    pdata->count_at_interrupt = snap.cycles;
             count_at_capture = __omap_dm_timer_read(pdata->capture_timer, OMAP_TIMER_CAPTURE_REG, pdata->capture_timer->posted);
 
             pdata->delta.tv_sec = 0;
@@ -188,7 +191,7 @@ static irqreturn_t pps_gmtimer_interrupt(int irq, void *data)
         }
     }
 
-    return IRQ_HANDLED; // TODO: shared interrupts?
+    return IRQ_HANDLED;
 }
 
 static void omap_dm_timer_setup_capture(struct omap_dm_timer *timer, const struct omap_dm_timer_ops *timer_ops)
@@ -228,11 +231,32 @@ static void omap_dm_timer_setup_capture(struct omap_dm_timer *timer, const struc
 static void omap_dm_timer_use_tclkin(struct pps_gmtimer_platform_data *pdata)
 {
     struct clk *gt_fclk;
+    struct clk* parent;
+    struct omap_dm_timer *timer;
+    int ret;
 
-    pdata->timer_ops->set_source(pdata->capture_timer, OMAP_TIMER_SRC_EXT_CLK);
-    gt_fclk = pdata->timer_ops->get_fclk(pdata->capture_timer);
+    timer = pdata->capture_timer;
+
+    gt_fclk = pdata->timer_ops->get_fclk(timer);
+    /* retrieve the virtual timer clock "timerN_fck" */
+    gt_fclk = clk_get_parent(gt_fclk);
+    if (IS_ERR(gt_fclk)) {
+	    pr_err("cannot get timerN_fck\n");
+	    return;
+    }
+    parent = clk_get(&timer->pdev->dev, "tclkin_ck");
+    if (IS_ERR(parent)) {
+	    pr_err("parent timer tclkin_ck not found\n");
+	    return;
+    }
+    pr_info("tclkin rate %luHz\n", clk_get_rate(parent));
+    ret = clk_set_parent(gt_fclk, parent);
+    if (ret < 0)
+	    pr_err("cannot reparent clock to tclkin_ck (%i)\n", ret);
     pdata->frequency = clk_get_rate(gt_fclk);
     pr_info("timer(%s) switched to tclkin, rate=%uHz\n", pdata->timer_name, pdata->frequency);
+
+    clk_put(parent);
 }
 
 static void pps_gmtimer_enable_irq(struct pps_gmtimer_platform_data *pdata)
