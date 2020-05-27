@@ -80,4 +80,11 @@
 			};
 		};
 	};
+
+	fragment@3 {
+		target = <&tclkin_ck>;
+		__overlay__ {
+			clock-frequency = <10000000>;
+		};
+	};
 };
