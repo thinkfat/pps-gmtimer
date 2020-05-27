@@ -32,20 +32,20 @@
 		"P9.41A",       /* TCLKIN   */
 		"P9.41B",       /* tied to TCLKIN   */
                 /* the hardware ip uses */
-                "uart4",   /* 0-based counting */
+                "uart2",   /* 0-based counting */
                 "gpio2_2", /* 0-based counting */
 		"timer4";  /* 1-based counting */
 
         fragment@0 {
                 target = <&am33xx_pinmux>;
                 __overlay__ {
-                        gps_uart4_pins: pinmux_gps_uart4_pins {
+                        gps_uart2_pins: pinmux_gps_uart2_pins {
                                 pinctrl-single,pins = <
-					0x70 0x26 /* P9.11 uart4_rxd MODE6 INPUT (RX) */
-                                        0x74 0x06 /* P9.13 uart4_txd MODE6 OUTPUT (TX) */
-                                >;
+                                        0x150 0x21      /* spi0_sclk.uart2_rxd | MODE1 */
+                                        0x154 0x01      /* spi0_d0.uart2_txd | MODE1 */
+                               >;
                         };
-                        
+
                         gps_pps_pins: pinmux_gps_pps_pins {
 				pinctrl-single,pins = <
 				      0x90 0x22 /* P8.7 MODE2 TIMER4 */
@@ -58,11 +58,11 @@
         };
 
 	fragment@1 {
-                target = <&uart5>;	/* 1-based counting */
+                target = <&uart2>;	/* 1-based counting */
                 __overlay__ {
                         status = "okay";
                         pinctrl-names = "default";
-                        pinctrl-0 = <&gps_uart4_pins>;
+                        pinctrl-0 = <&gps_uart2_pins>;
                 };
 	};
 
