@@ -270,7 +270,6 @@ static irqreturn_t pps_gmtimer_interrupt(int irq, void *data)
 
 			/* kernel may now use the clocksource */
 			schedule_work(&pdata->offload);
-			pdata->primed = 1;
 
 			pr_debug("match primed: %u cap:%u\n", pdata->next_match, pdata->count_at_match);
 		} else {
@@ -471,7 +470,8 @@ static void pps_gmtimer_cleanup_timers(struct pps_gmtimer_data *pdata)
 
 /* clocksource ***************/
 
-static void clocksource_work(struct work_struct *work) {
+static void clocksource_work(struct work_struct *work)
+{
 	struct pps_gmtimer_data *pdata = container_of(work, struct pps_gmtimer_data, offload);
 	struct clocksource *cs = &pdata->clksrc;
 
@@ -479,6 +479,7 @@ static void clocksource_work(struct work_struct *work) {
 	pr_debug("clocksource rating changed\n");
 
 	clocksource_change_rating(cs, 401);
+	pdata->primed = 1;
 }
 
 static u64 pps_gmtimer_read_cycles(struct clocksource *cs)
@@ -640,7 +641,7 @@ static int pps_gmtimer_probe(struct platform_device *pdev)
 				pdata->pps_timer, pdata->pps_timer_name, TIMER_TYPE_PPS);
 
     /*
-     * at this point, all configured timers are configured
+     * at this point, all timers are configured
      * but not yet running
      */
 
